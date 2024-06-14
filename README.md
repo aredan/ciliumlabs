@@ -1,5 +1,5 @@
 ## Cilium LABs with Kind
-This is based on https://github.com/chornberger-c2c/isovalent-cilium-lab/blob/main/lab.md with minor changes and all the steps togather for easy follow-up.
+This is based on https://github.com/chornberger-c2c/isovalent-cilium-lab/blob/main/lab.md with minor changes and all the steps together for easy follow-up.
 More stuff will be added coming soon.
 
 Why?
@@ -19,6 +19,8 @@ I know that Cilium offers hosted LABs for free, but here I'm just trying to play
 chmod +x kind
 mv kind ~/bin  
 ```
+
+note: make sure that you have ~/bin/ in your $PATH
 
 ## Inotify Settings.
 
