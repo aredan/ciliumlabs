@@ -57,13 +57,6 @@ kind create cluster --config cluster.yml
 
 #### Validating cluster.
 
-```shell
-kubectl get nodes
-kubectl get all 
-kubectl get pods -A
-kubectl config current-context
-```
-
 -> If you are running this in a new Linux server, get the kubectl binary.
 
 ```shell
@@ -71,6 +64,18 @@ curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stabl
 chmod +x kubectl
 mv ./kubectl ~/bin/kubectl
 ```
+
+```shell
+kubectl get nodes
+kubectl get all 
+kubectl get pods -A
+kubectl config current-context
+```
+
+![cluster status](pictures/kgetnodes.jpg)
+
+-> node status is NotReady, this is because there is not CNI installed yet.
+
 
 #### kind documentation
 
