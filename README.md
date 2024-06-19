@@ -1,14 +1,14 @@
-## Cilium LABs with Kind
+### Cilium LABs with Kind
 This is based on https://github.com/chornberger-c2c/isovalent-cilium-lab/blob/main/lab.md with minor changes and all the steps together for easy follow-up.
-More stuff will be added coming soon.
+More stuff will be added soon.
 
 Why?
 
-I know that Cilium offers hosted LABs for free, but here I'm just trying to play with the labs in a different way and witout time constrain for lab completion.
+I know that Cilium offers hosted LABs for free, but here I'm just trying to play with the labs in a different way and without time constrain for lab completion.
 
-## Kind Installation.
+### Kind Installation.
 
-## CLI Tool.
+#### CLI Tool.
 
 ```shell
 # see https://kind.sigs.k8s.io/docs/user/quick-start#installation
@@ -22,7 +22,7 @@ mv kind ~/bin
 
 note: make sure that you have ~/bin/ in your $PATH
 
-## Inotify Settings.
+#### Inotify Settings.
 
 ```shell
 # see https://kind.sigs.k8s.io/docs/user/known-issues/#pod-errors-due-to-too-many-open-files
@@ -31,8 +31,8 @@ sudo echo "fs.inotify.max_user_instances=512 "  >> /etc/sysctl.conf
 sudo sysctl -p 
 ```
 
-## Create kind cluster.
-=> Using this code, save it as cluster.yml
+#### Create kind cluster.
+-> Using this yaml code, createa file and save it as cluster.yml
 
 ```yaml
 kind: Cluster
@@ -49,13 +49,13 @@ networking:
   disableDefaultCNI: true
 ```
 
-=> Create kind cluster with cluster.yml 
+-> Create kind cluster with cluster.yml 
 
 ```shell
 kind create cluster --config cluster.yml
 ```
 
-## Validating cluster.
+#### Validating cluster.
 
 ```shell
 kubectl get nodes
@@ -64,14 +64,14 @@ kubectl get pods -A
 kubectl config current-context
 ```
 
-## Documentation
-## for more options available see: 
+#### kind documentation
+
 https://kind.sigs.k8s.io/docs/user/quick-start/
 
 
-## Cilium Lab
-## Install and setup Cilium with Hubble
-### Outcome
+### Cilium Lab
+#### Install and setup Cilium with Hubble
+#### Outcome
 
 Cilium and hubble will be installed on this local Kubernetes cluster.
 
@@ -83,11 +83,17 @@ cilium hubble ui &
 cilium connectivity test
 ```
 
-=> This creates namespace cilium-test which we will use later on!
+-> This creates namespace cilium-test which we will use later on!  
 
-## Verify that outgoing requests work
+note: If you are using kind in a remote computer and want to port fwd the Hubble port, you need to use 0.0.0.0 as a bind IP address.
 
-We test the connection from the first pod in namespace cilium-test to https://cilium.io and get a positive return code.
+```shell
+kubectl port-forward -n kube-system svc/hubble-ui --address 0.0.0.0 --address :: 12000:80 &
+```
+
+#### Verify that outgoing requests work
+
+Test the connection from the first pod in namespace cilium-test to https://cilium.io and get a positive return code.
 
 ```shell
 BACKEND=$(kubectl get pods -n cilium-test -o jsonpath='{.items[0].metadata.name}')
@@ -95,7 +101,7 @@ kubectl -n cilium-test exec -ti ${BACKEND} -- curl -Ik --connect-timeout 5 https
 HTTP/2 200
 ```
 
-## Apply a first policy for zero trust
+#### Apply a first policy for zero trust
 
 ```yaml
 apiVersion: cilium.io/v2
@@ -119,7 +125,7 @@ spec:
               - matchPattern: "*"
 ```
 
-or go to https://editor.networkpolicy.io/ and do it manually
+or you can go to https://editor.networkpolicy.io/ and do it manually
 
 ![create policy](pictures/editor-cilium-io-1.png)
 
@@ -147,9 +153,9 @@ command terminated with exit code 28
 hubble observe --output jsonpb --last 1000  > backend-cilium-io.json
 ```
 
-=> The connection to https://cilium.io won't work, as we configured "Egress Default Deny" in our first policy.
+-> The connection to https://cilium.io won't work, as we configured "Egress Default Deny" in our first policy.
 
-## Apply new rule that allows access to cilium.io
+#### Apply new rule that allows access to cilium.io
 
 ```yaml
 apiVersion: cilium.io/v2
@@ -195,7 +201,7 @@ Apply locally
 kubectl apply -f https://raw.githubusercontent.com/chornberger-c2c/isovalent-cilium-lab/main/cilium-network-policies/allow-cilium-io.yml
 ```
 
-## Verify
+### Verify
 
 ```shell
 kubectl -n cilium-test exec -ti ${BACKEND} -- curl -Ik --connect-timeout 5 https://kubernetes.io | head -1
@@ -203,11 +209,11 @@ curl: (28) Connection timeout after 5001 ms
 command terminated with exit code 28
 ```
 
-=> Timeout indicates that the connection to https://kubernetes.io doesn't work, as of "Egress Default Deny".
+-> Timeout indicates that the connection to https://kubernetes.io doesn't work, as of "Egress Default Deny".
 
 ```shell
 kubectl -n cilium-test exec -ti ${BACKEND} -- curl -Ik --connect-timeout 5 https://cilium.io | head -1
 HTTP/2 200
 ```
 
-=> Positive return code shows that the connection to https://cilium.io works, as of our applied policy.
+-> Positive return code shows that the connection to https://cilium.io works, as of our applied policy.
