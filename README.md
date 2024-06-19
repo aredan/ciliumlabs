@@ -70,20 +70,42 @@ https://kind.sigs.k8s.io/docs/user/quick-start/
 
 
 ### Cilium Lab
+
+#### CLI Tool.
+
+-> You need to install the cilium cli tool, in this case is easier to use the cilium cli instead of Helm.
+
+```shell
+CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
+CLI_ARCH=amd64
+if [ "$(uname -m)" = "aarch64" ]; then CLI_ARCH=arm64; fi
+curl -L --fail --remote-name-all https://github.com/cilium/cilium-cli/releases/download/${CILIUM_CLI_VERSION}/cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
+sha256sum --check cilium-linux-${CLI_ARCH}.tar.gz.sha256sum
+sudo tar xzvfC cilium-linux-${CLI_ARCH}.tar.gz /usr/local/bin
+rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
+```
+
+```shell
+cilium version --client
+```
+
+Make sure you install cilium-cli v0.15.0 or later.
+
+
 #### Install and setup Cilium with Hubble
 #### Outcome
 
 Cilium and hubble will be installed on this local Kubernetes cluster.
 
 ```shell
-cilium install  
+cilium install  --set cluster.name=cilium1 --set cluster.id=1 --context cilium1
 cilium hubble enable --ui
 cilium hubble port-forward &
 cilium hubble ui &
 cilium connectivity test
 ```
 
--> This creates namespace cilium-test which we will use later on!  
+-> Cilium will be installed with name "cilium1" and ID 1, this way we can create a second cluster and just set name and id to a different value.  
 
 note: If you are using kind in a remote computer and want to port fwd the Hubble port, you need to use 0.0.0.0 as a bind IP address.
 
