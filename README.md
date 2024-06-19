@@ -64,6 +64,14 @@ kubectl get pods -A
 kubectl config current-context
 ```
 
+-> If you are running this in a new Linux server, get the kubectl binary.
+
+```shell
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+chmod +x kubectl
+mv ./kubectl ~/bin/kubectl
+```
+
 #### kind documentation
 
 https://kind.sigs.k8s.io/docs/user/quick-start/
@@ -99,6 +107,7 @@ Cilium and hubble will be installed on this local Kubernetes cluster.
 
 ```shell
 cilium install  --set cluster.name=cilium1 --set cluster.id=1 --context cilium1
+cilium status --wait
 cilium hubble enable --ui
 cilium hubble port-forward &
 cilium hubble ui &
