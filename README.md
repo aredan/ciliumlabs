@@ -20,7 +20,7 @@ chmod +x kind
 mv kind ~/bin  
 ```
 
-note: make sure that you have ~/bin/ in your $PATH
+> make sure that you have ~/bin/ in your $PATH
 
 #### Inotify Settings.
 
@@ -32,7 +32,7 @@ sudo sysctl -p
 ```
 
 #### Create kind cluster.
--> Using this yaml code, createa file and save it as cluster.yml
+Using this yaml code, createa file and save it as cluster1.yml
 
 ```yaml
 kind: Cluster
@@ -49,15 +49,15 @@ networking:
   disableDefaultCNI: true
 ```
 
--> Create kind cluster with cluster.yml 
+Create kind cluster with cluster1.yml 
 
 ```shell
-kind create cluster --config cluster.yml
+kind create cluster --config cluster1.yml
 ```
 
 #### Validating cluster.
 
--> If you are running this in a new Linux server, get the kubectl binary.
+If you are running this in a new Linux server, get the kubectl binary.
 
 ```shell
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -74,7 +74,7 @@ kubectl config current-context
 
 ![cluster status](pictures/kgetnodes.jpg)
 
--> node status is NotReady, this is because there is not CNI installed yet.
+> node status is NotReady, this is because there is not CNI installed yet.
 
 
 #### kind documentation
@@ -86,7 +86,7 @@ https://kind.sigs.k8s.io/docs/user/quick-start/
 
 #### CLI Tool.
 
--> You need to install the cilium cli tool, in this case is easier to use the cilium cli instead of Helm.
+You need to install the cilium cli tool, in this case is easier to use the cilium cli instead of Helm.
 
 ```shell
 CILIUM_CLI_VERSION=$(curl -s https://raw.githubusercontent.com/cilium/cilium-cli/main/stable.txt)
@@ -102,7 +102,7 @@ rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
 cilium version --client
 ```
 
-Make sure you install cilium-cli v0.15.0 or later.
+> Make sure you install cilium-cli v0.15.0 or later.
 
 
 #### Install and setup Cilium with Hubble
@@ -111,7 +111,7 @@ Make sure you install cilium-cli v0.15.0 or later.
 Cilium and hubble will be installed on this local Kubernetes cluster.
 
 ```shell
-cilium install  --set cluster.name=cilium1 --set cluster.id=1 --context cilium1
+cilium install  --set cluster.name=cilium1 --set cluster.id=1 --context kind-cilium1
 cilium status --wait
 cilium hubble enable --ui
 cilium hubble port-forward &
@@ -119,9 +119,14 @@ cilium hubble ui &
 cilium connectivity test
 ```
 
--> Cilium will be installed with name "cilium1" and ID 1, this way we can create a second cluster and just set name and id to a different value.  
+Cilium will be installed with name "cilium1" and ID 1, this way we can create a second cluster and just set name and id to a different value. 
 
-note: If you are using kind in a remote computer and want to port fwd the Hubble port, you need to use 0.0.0.0 as a bind IP address.
+![cilium install](pictures/cinstall.jpg)
+
+![cilium status](pictures/cstatus.jpg)
+
+
+> If you are using kind in a remote computer and want to port fwd the Hubble port, you need to use 0.0.0.0 as a bind IP address.
 
 ```shell
 kubectl port-forward -n kube-system svc/hubble-ui --address 0.0.0.0 --address :: 12000:80 &
@@ -189,7 +194,7 @@ command terminated with exit code 28
 hubble observe --output jsonpb --last 1000  > backend-cilium-io.json
 ```
 
--> The connection to https://cilium.io won't work, as we configured "Egress Default Deny" in our first policy.
+The connection to https://cilium.io won't work, as we configured "Egress Default Deny" in our first policy.
 
 #### Apply new rule that allows access to cilium.io
 
@@ -245,11 +250,11 @@ curl: (28) Connection timeout after 5001 ms
 command terminated with exit code 28
 ```
 
--> Timeout indicates that the connection to https://kubernetes.io doesn't work, as of "Egress Default Deny".
+Timeout indicates that the connection to https://kubernetes.io doesn't work, as of "Egress Default Deny".
 
 ```shell
 kubectl -n cilium-test exec -ti ${BACKEND} -- curl -Ik --connect-timeout 5 https://cilium.io | head -1
 HTTP/2 200
 ```
 
--> Positive return code shows that the connection to https://cilium.io works, as of our applied policy.
+Positive return code shows that the connection to https://cilium.io works, as of our applied policy.
