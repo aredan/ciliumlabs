@@ -7,7 +7,7 @@ Why?
 I know that Cilium offers hosted LABs for free, but here I'm just trying to play with the labs in a different way and without time constrain for lab completion.
 
 ### pre-requesities.
-For all the LABs in this repo you will ned Docker, Kind, kubectl and kind-cli.
+For all the LABs in this repo you will need Docker, Kind, kubectl and kind-cli.
 
 ### Docker installation.
 Add the repo to your system.
@@ -102,4 +102,10 @@ cilium version --client
 Now you can continue to one of the fallowing configuration for testing different componentes of Cilium.
 
 #### beginner lab
-For a basic lab configuration go to[begginer/](beginner/README.md)
+For a basic lab configuration go to [beginner/](beginner/README.md)
+
+#### BGP lab
+For a basic lab configuration go to [bgp/](bgp/README.md)
+
+#### Mesh lab
+For a basic lab configuration go to [mesh/](mesh/README.md)
