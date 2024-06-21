@@ -38,7 +38,7 @@ kubectl get pods -A
 kubectl config current-context
 ```
 
-![cluster status](pictures/kgetnodes.jpg)
+![cluster status](../pictures/kgetnodes.jpg)
 
 > node status is NotReady, this is because there is not CNI installed yet.
 
@@ -57,9 +57,9 @@ cilium connectivity test
 
 Cilium will be installed with name "cilium1" and ID 1, this way we can create a second cluster and just set name and id to a different value. 
 
-![cilium install](pictures/cinstall.jpg)
+![cilium install](../pictures/cinstall.jpg)
 
-![cilium status](pictures/cstatus.jpg)
+![cilium status](../pictures/cstatus.jpg)
 
 
 > If you are using kind in a remote computer and want to port fwd the Hubble port, you need to use 0.0.0.0 as a bind IP address.
@@ -104,12 +104,12 @@ spec:
 
 or you can go to https://editor.networkpolicy.io/ and do it manually
 
-![create policy](pictures/editor-cilium-io-1.png)
+![create policy](../pictures/editor-cilium-io-1.png)
 
 * "Create new policy" (empty page bottom left)
 * "Edit" icon in the middle of the page => enter a namespace and a policy name
 
-![deny egress](pictures/editor-cilium-io-2.png)
+![deny egress](../pictures/editor-cilium-io-2.png)
 
 * "Egress Default Deny"
 * "Allow Kubernetes DNS"
@@ -163,14 +163,14 @@ spec:
 
 or go to https://editor.cilium.io and do it manually
 
-![upload flows and add rule](pictures/editor-cilium-io-3.png)
+![upload flows and add rule](../pictures/editor-cilium-io-3.png)
 
 * "Flows upload"
 * "Upload flows"
 * "Add rule"
 * "Download"
 
-![rule added](pictures/editor-cilium-io-4.png)
+![rule added](../pictures/editor-cilium-io-4.png)
 
 Apply locally
 
