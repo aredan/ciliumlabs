@@ -6,9 +6,48 @@ Why?
 
 I know that Cilium offers hosted LABs for free, but here I'm just trying to play with the labs in a different way and without time constrain for lab completion.
 
+### pre-requesities.
+For all the LABs in this repo you will ned Docker, Kind, kubectl and kind-cli.
+
+### Docker installation.
+Add the repo to your system.
+
+```shell
+# Add Docker's official GPG key:
+sudo apt-get update
+sudo apt-get install ca-certificates curl
+sudo install -m 0755 -d /etc/apt/keyrings
+sudo curl -fsSL https://download.docker.com/linux/debian/gpg -o /etc/apt/keyrings/docker.asc
+sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+# Add the repository to Apt sources:
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/debian \
+  $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+sudo apt-get update
+```
+
+Install the package.
+
+```shell
+sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+Add your user to the Docker group.
+
+```shell
+sudo adduser <user> docker
+```
+
+Test your Docker installation.
+
+```shell
+sudo docker run hello-world
+```
+
 ### Kind Installation.
 
-#### CLI Tool.
 
 ```shell
 # see https://kind.sigs.k8s.io/docs/user/quick-start#installation
@@ -31,33 +70,8 @@ sudo echo "fs.inotify.max_user_instances=512 "  >> /etc/sysctl.conf
 sudo sysctl -p 
 ```
 
-#### Create kind cluster.
-Using this yaml code, createa file and save it as cluster1.yml
-
-```yaml
-kind: Cluster
-name: cilium1
-apiVersion: kind.x-k8s.io/v1alpha4
-nodes:
-- role: control-plane
-- role: worker
-- role: worker
-- role: worker
-networking:
-  podSubnet: 10.241.0.0/16
-  serviceSubnet: 10.112.0.0/16
-  disableDefaultCNI: true
-```
-
-Create kind cluster with cluster1.yml 
-
-```shell
-kind create cluster --config cluster1.yml
-```
-
-#### Validating cluster.
-
-If you are running this in a new Linux server, get the kubectl binary.
+### kubectl
+You need the kubectl binary to interact with K8s.
 
 ```shell
 curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -65,27 +79,7 @@ chmod +x kubectl
 mv ./kubectl ~/bin/kubectl
 ```
 
-```shell
-kubectl get nodes
-kubectl get all 
-kubectl get pods -A
-kubectl config current-context
-```
-
-![cluster status](pictures/kgetnodes.jpg)
-
-> node status is NotReady, this is because there is not CNI installed yet.
-
-
-#### kind documentation
-
-https://kind.sigs.k8s.io/docs/user/quick-start/
-
-
-### Cilium Lab
-
-#### CLI Tool.
-
+### Cilium CLI Tool.
 You need to install the cilium cli tool, in this case is easier to use the cilium cli instead of Helm.
 
 ```shell
@@ -101,160 +95,11 @@ rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
 ```shell
 cilium version --client
 ```
-
 > Make sure you install cilium-cli v0.15.0 or later.
 
 
-#### Install and setup Cilium with Hubble
-#### Outcome
+### Next steps.
+Now you can continue to one of the fallowing configuration for testing different componentes of Cilium.
 
-Cilium and hubble will be installed on this local Kubernetes cluster.
-
-```shell
-cilium install  --set cluster.name=cilium1 --set cluster.id=1 --context kind-cilium1
-cilium status --wait
-cilium hubble enable --ui
-cilium hubble port-forward &
-cilium hubble ui &
-cilium connectivity test
-```
-
-Cilium will be installed with name "cilium1" and ID 1, this way we can create a second cluster and just set name and id to a different value. 
-
-![cilium install](pictures/cinstall.jpg)
-
-![cilium status](pictures/cstatus.jpg)
-
-
-> If you are using kind in a remote computer and want to port fwd the Hubble port, you need to use 0.0.0.0 as a bind IP address.
-
-```shell
-kubectl port-forward -n kube-system svc/hubble-ui --address 0.0.0.0 --address :: 12000:80 &
-```
-
-#### Verify that outgoing requests work
-
-Test the connection from the first pod in namespace cilium-test to https://cilium.io and get a positive return code.
-
-```shell
-BACKEND=$(kubectl get pods -n cilium-test -o jsonpath='{.items[0].metadata.name}')
-kubectl -n cilium-test exec -ti ${BACKEND} -- curl -Ik --connect-timeout 5 https://cilium.io | head -1
-HTTP/2 200
-```
-
-#### Apply a first policy for zero trust
-
-```yaml
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: cilium-test
-  namespace: cilium-test
-spec:
-  endpointSelector: {}
-  egress:
-    - toEndpoints:
-        - matchLabels:
-            io.kubernetes.pod.namespace: kube-system
-            k8s-app: kube-dns
-      toPorts:
-        - ports:
-            - port: "53"
-              protocol: UDP
-          rules:
-            dns:
-              - matchPattern: "*"
-```
-
-or you can go to https://editor.networkpolicy.io/ and do it manually
-
-![create policy](pictures/editor-cilium-io-1.png)
-
-* "Create new policy" (empty page bottom left)
-* "Edit" icon in the middle of the page => enter a namespace and a policy name
-
-![deny egress](pictures/editor-cilium-io-2.png)
-
-* "Egress Default Deny"
-* "Allow Kubernetes DNS"
-* "Download"
-
-Apply locally
-
-```shell
-kubectl apply -f https://raw.githubusercontent.com/chornberger-c2c/isovalent-cilium-lab/main/cilium-network-policies/egress-default-deny.yml
-```
-
-Observe the change
-
-```shell
-kubectl -n cilium-test exec -ti ${BACKEND} -- curl -Ik --connect-timeout 5 https://cilium.io | head -1
-curl: (28) Connection timeout after 5001 ms
-command terminated with exit code 28
-hubble observe --output jsonpb --last 1000  > backend-cilium-io.json
-```
-
-The connection to https://cilium.io won't work, as we configured "Egress Default Deny" in our first policy.
-
-#### Apply new rule that allows access to cilium.io
-
-```yaml
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: cilium-test
-  namespace: cilium-test
-spec:
-  endpointSelector: {}
-  egress:
-    - toEndpoints:
-        - matchLabels:
-            io.kubernetes.pod.namespace: kube-system
-            k8s-app: kube-dns
-      toPorts:
-        - ports:
-            - port: "53"
-              protocol: UDP
-          rules:
-            dns:
-              - matchPattern: "*"
-    - toFQDNs:
-        - matchName: cilium.io
-      toPorts:
-        - ports:
-            - port: "443"
-```
-
-or go to https://editor.cilium.io and do it manually
-
-![upload flows and add rule](pictures/editor-cilium-io-3.png)
-
-* "Flows upload"
-* "Upload flows"
-* "Add rule"
-* "Download"
-
-![rule added](pictures/editor-cilium-io-4.png)
-
-Apply locally
-
-```shell
-kubectl apply -f https://raw.githubusercontent.com/chornberger-c2c/isovalent-cilium-lab/main/cilium-network-policies/allow-cilium-io.yml
-```
-
-### Verify
-
-```shell
-kubectl -n cilium-test exec -ti ${BACKEND} -- curl -Ik --connect-timeout 5 https://kubernetes.io | head -1
-curl: (28) Connection timeout after 5001 ms
-command terminated with exit code 28
-```
-
-Timeout indicates that the connection to https://kubernetes.io doesn't work, as of "Egress Default Deny".
-
-```shell
-kubectl -n cilium-test exec -ti ${BACKEND} -- curl -Ik --connect-timeout 5 https://cilium.io | head -1
-HTTP/2 200
-```
-
-Positive return code shows that the connection to https://cilium.io works, as of our applied policy.
+#### beginner lab
+For a basic lab configuration go to[begginer/](beginner/README.md)
