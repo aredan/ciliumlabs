@@ -9,7 +9,7 @@ clab:
 	sudo containerlab -d --log-level debug deploy -t topo.yaml
 
 cilium:
-	cilium-cli install --version=1.14 \
+	cilium install --version=1.14 \
 	  --helm-set ipam.mode=kubernetes \
 	  --helm-set tunnel=disabled \
 	  --helm-set ipv4NativeRoutingCIDR="10.0.0.0/8" \
@@ -17,7 +17,7 @@ cilium:
 	  --helm-set k8s.requireIPv4PodCIDR=true
 
 wait-for-cilium:
-	cilium-cli status --wait
+	cilium status --wait
 
 bgp:
 	kubectl apply -f cilium-bgp-peering-policies.yaml
