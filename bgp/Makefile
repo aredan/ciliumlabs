@@ -6,7 +6,7 @@ kind:
 	kind create cluster --config cluster.yaml
 
 clab:
-	sudo containerlab -d --log-level debug deploy -t topo.yaml
+	sudo containerlab deploy -t topo.yaml
 
 cilium:
 	cilium install --version=1.14 \

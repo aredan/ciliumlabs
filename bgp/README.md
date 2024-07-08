@@ -28,3 +28,14 @@ All the steps are described in the `Makefile`, just type `make` to initialize th
 
 When you're done, use `make clean` to remove the lab.
 > This lab can run totally separate from the other labs, if your machine have the resources, the labs can be running at the same time.
+
+### the network looks like this.
+
+![network diagram](../pictures/cilium-bgp-lab.jpg)
+
+### What now?
+
+Now you can deploy an application and test your announcement, by default de PodCIDR will be announce to Tor(0 and 1).
+
+[Cilium Star War](https://github.com/cilium/star-wars-demo)
+
