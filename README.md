@@ -105,7 +105,7 @@ Now you can continue to one of the fallowing configuration for testing different
 For a basic lab configuration go to [beginner/](beginner/README.md)
 
 #### BGP lab
-For a basic lab configuration go to [bgp/](bgp/README.md)
+For BGP specific lab configuration go to [bgp/](bgp/README.md)
 
 #### Mesh lab
-For a basic lab configuration go to [mesh/](mesh/README.md)
+If you want to do some Mesh go to [mesh/](mesh/README.md)
