@@ -13,6 +13,9 @@ spec:
     neighbors:
     - peerAddress: "10.0.0.1/32"
       peerASN: 65010
+    serviceSelector:
+      matchExpressions:
+        - {key: service, operator: In, values: ['public']}
 ---
 apiVersion: "cilium.io/v2alpha1"
 kind: CiliumBGPPeeringPolicy
@@ -28,4 +31,6 @@ spec:
     neighbors:
     - peerAddress: "10.0.0.2/32"
       peerASN: 65011
-
+    serviceSelector:
+      matchExpressions:
+        - {key: service, operator: In, values: ['public']}

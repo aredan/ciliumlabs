@@ -76,6 +76,7 @@ topology:
       - ip addr add 10.0.0.2/32 dev lo
       - ip addr add 10.0.3.1/24 dev net1
       - ip addr add 10.0.4.1/24 dev net2
+      - ip addr add 10.0.100.1/24 dev net3
       - touch /etc/frr/vtysh.conf
       - sed -i -e 's/bgpd=no/bgpd=yes/g' /etc/frr/daemons
       - /usr/lib/frr/frrinit.sh start
@@ -97,6 +98,16 @@ topology:
         -c '    redistribute connected'
         -c '  exit-address-family'
         -c '!'
+    client0:
+      kind: linux
+      image: alpine:latest
+      labels:
+        app: client
+      cmd: ash
+      exec:
+      - ip link del eth0
+      - ip add add 10.0.100.2/24 dev net0
+      - ip route replace default via 10.0.100.1
     server0:
       kind: linux
       image: nicolaka/netshoot:latest
@@ -135,4 +146,4 @@ topology:
   - endpoints: ["tor0:net2", "server1:net0"]
   - endpoints: ["tor1:net1", "server2:net0"]
   - endpoints: ["tor1:net2", "server3:net0"]
-
+  - endpoints: ["tor1:net3", "client0:net0"]

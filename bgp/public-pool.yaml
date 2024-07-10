@@ -1,0 +1,10 @@
+apiVersion: "cilium.io/v2alpha1"
+kind: CiliumLoadBalancerIPPool
+metadata:
+  name: "public-pool"
+spec:
+  blocks:
+  - cidr: "10.0.10.0/24"
+  serviceSelector:
+    matchLabels:
+      service: public

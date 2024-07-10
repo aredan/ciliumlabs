@@ -24,6 +24,8 @@ wait-for-cilium:
 
 peering-policy:
 	kubectl apply -f cilium-bgp-peering-policies.yaml
+ippool:
+	kubectl apply -f public-pool.yaml
 
 status:
 	kubectl get pods -n kube-system
@@ -35,7 +37,7 @@ conn-test:
 clean: clean-kind clean-clab
 
 clean-kind:
-	kind delete clusters clab-bgp-cplane-demo
+	kind delete clusters clab-bgp
 
 clean-clab:
 	sudo containerlab destroy -t topo.yaml
