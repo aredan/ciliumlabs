@@ -1,4 +1,4 @@
-name: bgp-cplane-demo
+name: bgp-cplane
 topology:
   kinds:
     linux:
@@ -100,8 +100,8 @@ topology:
     server0:
       kind: linux
       image: nicolaka/netshoot:latest
-      # Must use the container full name while https://github.com/srl-labs/containerlab/issues/1731 is not resolved
-      network-mode: container:clab-bgp-cplane-demo-control-plane
+      # Must use the container full name - is the default behaviour
+      network-mode: container:clab-bgp-control-plane
       exec:
       # Cilium currently doesn't support BGP Unnumbered
       - ip addr add 10.0.1.2/24 dev net0
@@ -110,21 +110,21 @@ topology:
     server1:
       kind: linux
       image: nicolaka/netshoot:latest
-      network-mode: container:clab-bgp-cplane-demo-worker
+      network-mode: container:clab-bgp-worker
       exec:
       - ip addr add 10.0.2.2/24 dev net0
       - ip route replace default via 10.0.2.1
     server2:
       kind: linux
       image: nicolaka/netshoot:latest
-      network-mode: container:clab-bgp-cplane-demo-worker2
+      network-mode: container:clab-bgp-worker2
       exec:
       - ip addr add 10.0.3.2/24 dev net0
       - ip route replace default via 10.0.3.1
     server3:
       kind: linux
       image: nicolaka/netshoot:latest
-      network-mode: container:clab-bgp-cplane-demo-worker3
+      network-mode: container:clab-bgp-worker3
       exec:
       - ip addr add 10.0.4.2/24 dev net0
       - ip route replace default via 10.0.4.1
