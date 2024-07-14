@@ -12,6 +12,8 @@ For all the LABs in this repo you will need Docker, Kind, kubectl and kind-cli.
 ### Docker installation.
 Add the repo to your system.
 
+Note that the following installation is for Debian, installing docker in Ubuntu is sligthly different, for more information check de offical [docker installation guide for ubuntu](https://docs.docker.com/engine/install/ubuntu/) 
+
 ```shell
 # Add Docker's official GPG key:
 sudo apt-get update
