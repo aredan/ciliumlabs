@@ -1,6 +1,8 @@
 KUBECONFIG := $(HOME)/.kube/config
 
-default: kind clab cilium wait-for-cilium status
+default: kind clab node-status
+
+all: kind clab node-status cilium wait-for-cilium status peering-policy ippool 
 
 kind:
 	$(info Building Kind cluster.........)
@@ -9,6 +11,10 @@ kind:
 clab:
 	$(info Building containerlab network routers....)
 	sudo containerlab deploy -t topo.yaml
+
+node-status:
+	$(info Checking node status....) 
+	kubectl get node -owide
 
 cilium:
 	$(info Installing Cilium........)
