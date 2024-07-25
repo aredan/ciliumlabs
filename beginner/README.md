@@ -59,7 +59,7 @@ Cilium will be installed with name "cilium1" and ID 1, this way we can create a 
 
 ![cilium install](../pictures/cinstall.jpg)
 
-![cilium status](../pictures/cstatus.jpg)
+![cilium status](../pictures/cstatus-hubble.jpg)
 
 
 > If you are using kind in a remote computer and want to port fwd the Hubble port, you need to use 0.0.0.0 as a bind IP address.
