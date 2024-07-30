@@ -1,0 +1,150 @@
+name: ciliumlab
+topology:
+  kinds:
+    linux:
+      cmd: bash
+  nodes:
+    router0:
+      kind: linux
+      image: frrouting/frr:v8.2.2
+      labels:
+        app: frr
+      exec:
+      # NAT everything in here to go outside of the lab
+      - iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+      # Loopback IP (IP address of the router itself)
+      - ip addr add 10.0.0.0/32 dev lo
+      # Terminate rest of the 10.0.0.0/8 in here
+      - ip route add blackhole 10.0.0.0/8
+      # Boiler plate to make FRR work
+      - touch /etc/frr/vtysh.conf
+      - sed -i -e 's/bgpd=no/bgpd=yes/g' /etc/frr/daemons
+      - /usr/lib/frr/frrinit.sh start
+      # FRR configuration
+      - >-
+        vtysh -c 'conf t'
+        -c 'frr defaults datacenter'
+        -c 'router bgp 65000'
+        -c '  bgp router-id 10.0.0.0'
+        -c '  no bgp ebgp-requires-policy'
+        -c '  neighbor ROUTERS peer-group'
+        -c '  neighbor ROUTERS remote-as external'
+        -c '  neighbor ROUTERS default-originate'
+        -c '  neighbor net0 interface peer-group ROUTERS'
+        -c '  neighbor net1 interface peer-group ROUTERS'
+        -c '  address-family ipv4 unicast'
+        -c '    redistribute connected'
+        -c '  exit-address-family'
+        -c '!'
+    tor0:
+      kind: linux
+      image: frrouting/frr:v8.2.2
+      labels:
+        app: frr
+      exec:
+      - ip link del eth0
+      - ip addr add 10.0.0.1/32 dev lo
+      - ip addr add 10.0.1.1/24 dev net1
+      - touch /etc/frr/vtysh.conf
+      - sed -i -e 's/bgpd=no/bgpd=yes/g' /etc/frr/daemons
+      - /usr/lib/frr/frrinit.sh start
+      - >-
+        vtysh -c 'conf t'
+        -c 'frr defaults datacenter'
+        -c 'router bgp 65010'
+        -c '  bgp router-id 10.0.0.1'
+        -c '  no bgp ebgp-requires-policy'
+        -c '  neighbor ROUTERS peer-group'
+        -c '  neighbor ROUTERS remote-as external'
+        -c '  neighbor SERVERS peer-group'
+        -c '  neighbor SERVERS remote-as internal'
+        -c '  neighbor net0 interface peer-group ROUTERS'
+        -c '  neighbor 10.0.1.2 peer-group SERVERS'
+        -c '  neighbor 10.0.1.3 peer-group SERVERS'
+        -c '  neighbor 10.0.1.2 peer-group SERVERS'
+        -c '  address-family ipv4 unicast'
+        -c '    redistribute connected'
+        -c '  exit-address-family'
+        -c '!'
+    tor1:
+      kind: linux
+      image: frrouting/frr:v8.2.2
+      labels:
+        app: frr
+      exec:
+      - ip link del eth0
+      - ip addr add 10.0.0.2/32 dev lo
+      - ip addr add 10.0.2.1/24 dev net1
+      - touch /etc/frr/vtysh.conf
+      - sed -i -e 's/bgpd=no/bgpd=yes/g' /etc/frr/daemons
+      - /usr/lib/frr/frrinit.sh start
+      - >-
+        vtysh -c 'conf t'
+        -c 'frr defaults datacenter'
+        -c 'router bgp 65011'
+        -c '  bgp router-id 10.0.0.2'
+        -c '  bgp bestpath as-path multipath-relax'
+        -c '  no bgp ebgp-requires-policy'
+        -c '  neighbor ROUTERS peer-group'
+        -c '  neighbor ROUTERS remote-as external'
+        -c '  neighbor SERVERS peer-group'
+        -c '  neighbor SERVERS remote-as internal'
+        -c '  neighbor net0 interface peer-group ROUTERS'
+        -c '  neighbor 10.0.2.2 peer-group SERVERS'
+        -c '  neighbor 10.0.2.3 peer-group SERVERS'
+        -c '  neighbor 10.0.2.4 peer-group SERVERS'
+        -c '  address-family ipv4 unicast'
+        -c '    redistribute connected'
+        -c '  exit-address-family'
+        -c '!'
+    client0:
+      kind: linux
+      image: alpine:latest
+      labels:
+        app: client
+      cmd: ash
+      exec:
+      - ip link del eth0
+      - ip add add 10.0.0.10/24 dev net0
+      - ip route replace default via 10.0.0.1
+      - apk update && apk add curl tcpdump
+    cluster1:
+      kind: k8s-kind
+      startup-config: cluster1.yaml
+    cluster2:
+      kind: k8s-kind
+      startup-config: cluster2.yaml
+
+### Here we apply our configs and ip to Kind nodes
+
+    cluster1-control-plane:
+      kind: ext-container
+      exec: 
+      - ip addr add 10.0.1.2/24 dev eth1
+      - ip route replace default via 10.0.1.1
+    cluster1-worker:
+      kind: ext-container
+      exec: 
+      - ip addr add 10.0.2.2/24 dev eth1
+      - ip route replace default via 10.0.2.1
+
+    cluster2-control-plane:
+      kind: ext-container
+      exec: 
+      - ip addr add 10.0.3.2/24 dev eth1
+      - ip route replace default via 10.0.3.1
+    cluster2-worker:
+      kind: ext-container
+      exec: 
+      - ip addr add 10.0.4.2/24 dev eth1
+      - ip route replace default via 10.0.4.1
+
+  links:
+  - endpoints: ["router0:net0", "tor0:net0"]
+  - endpoints: ["router0:net1", "tor1:net0"]
+  - endpoints: ["router0:net2", "client0:net0"]
+  - endpoints: ["tor0:net1", "cluster1-control-plane:eth1"]
+  - endpoints: ["tor0:net2", "cluster1-worker:eth1"]
+  - endpoints: ["tor1:net1", "cluster2-control-plane:eth1"]
+  - endpoints: ["tor1:net2", "cluster2-worker:eth1"]
+

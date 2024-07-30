@@ -1,7 +1,7 @@
 ### Lab Cilium BGP
 > copied from https://github.com/pyaillet/lab-cilium-bgp with changes to suit my needs.
 
-A simple reproduction of the lab presented [here](https://www.youtube.com/watch?v=AXTKS0WCXjE) to be able to test some complementary things.
+A reproduction of the lab presented [here](https://www.youtube.com/watch?v=AXTKS0WCXjE) to be able to test some complementary things.
 
 ### Pre-requisites
 
