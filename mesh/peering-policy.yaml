@@ -1,0 +1,36 @@
+---
+apiVersion: "cilium.io/v2alpha1"
+kind: CiliumBGPPeeringPolicy
+metadata:
+  name: rack0
+spec:
+  nodeSelector:
+    matchLabels:
+      rack: rack0
+  virtualRouters:
+  - localASN: 65010
+    exportPodCIDR: true
+    neighbors:
+    - peerAddress: "10.0.0.1/32"
+      peerASN: 65010
+    serviceSelector:
+      matchExpressions:
+        - {key: service, operator: NotIn, values: ['private']}
+---
+apiVersion: "cilium.io/v2alpha1"
+kind: CiliumBGPPeeringPolicy
+metadata:
+  name: rack1
+spec:
+  nodeSelector:
+    matchLabels:
+      rack: rack1
+  virtualRouters:
+  - localASN: 65011
+    exportPodCIDR: true
+    neighbors:
+    - peerAddress: "10.0.0.2/32"
+      peerASN: 65011
+    serviceSelector:
+      matchExpressions:
+        - {key: service, operator: NotIn, values: ['private']}

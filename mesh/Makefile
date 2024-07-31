@@ -20,7 +20,7 @@ cluster2-status:
 cilium-install-cluster1:
 	$(info Installing Cilium on Cluster1........)
 	kubectl config use-context kind-cluster1
-	cilium install --version=1.15 \
+	cilium install --version=1.16 \
 	  --helm-set cluster.name=cluster1 \
 	  --helm-set cluster.id=1 \
 	  --helm-set ipam.mode=kubernetes \
@@ -32,7 +32,7 @@ cilium-install-cluster1:
 cilium-install-cluster2:
 	$(info Installing Cilium on Cluster2........)
 	kubectl config use-context kind-cluster2
-	cilium install --version=1.15 \
+	cilium install --version=1.16 \
 	  --helm-set cluster.name=cluster2 \
 	  --helm-set cluster.id=2 \
 	  --helm-set ipam.mode=kubernetes \

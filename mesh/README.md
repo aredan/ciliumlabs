@@ -40,7 +40,7 @@ or
 
 ```shell
 	kubectl config use-context kind-cluster1
-	cilium install --version=1.15 \
+	cilium install --version=1.16 \
 	  --helm-set cluster.name=cluster1 \
 	  --helm-set cluster.id=1 \
 	  --helm-set ipam.mode=kubernetes \
@@ -52,18 +52,34 @@ or
  > change the context to cluster2, the name and id, now you can run the same command targeted to cluster2.
  > if you look closelly to the cilium install, there is a name and also an ID, since this cluster will talk to each other, there need to be able to identify each other.
 
+Before enabling Mesh, lets apply some BGP configuration to be able to use LoadBalancer service for the Mesh endpoints, if you played with the BGP Labs, this is the same.
+```shell
+kubectl config use-context kind-cluster1
+kubectl apply -f peering-policy.yaml
+kubectl apply -f cluster1-public-pool.yaml
+
+kubectl config use-context kind-cluster2
+kubectl apply -f peering-policy.yaml
+kubectl apply -f cluster1-public-pool.yaml
+```
+
+
 
 Now we need to enable the actual mesh functionality.
 
 ```shell
-cilium clustermesh enable --context kind-cluster1
-cilium clustermesh enable --context kind-cluster2
+cilium clustermesh enable --context kind-cluster1 --enable-kvstoremesh=false --service-type LoadBalancer
+cilium clustermesh enable --context kind-cluster2 --enable-kvstoremesh=false --service-type LoadBalancer
 ```
 Check for Mesh status in Cilium
 ```shell
-cilium clustermesh status --context kind-cluster1 --wait
-cilium clustermesh status --context kind-cluster2 --wait
+cilium clustermesh status --context kind-cluster1 --wait 
+cilium clustermesh status --context kind-cluster2 --wait 
 ```
+> In some cases, the service type cannot be automatically detected and you need to specify it manually. This can be done with the option --service-type
+> LoadBalancer:
+> A Kubernetes service of type LoadBalancer is used to expose the control plane. This uses a stable LoadBalancer IP and is typically the best option.
+> note: Remenber that LoadBalancer is not available unless configure, you can use part of the bgp lab.
 
 Finally, connect the clusters. This step only needs to be done in one direction. The connection will automatically be established in both directions:
 ```shell
@@ -79,7 +95,7 @@ Testing pod connectivity between clusters.
 cilium connectivity test --context kind-cluster1 --multi-cluster kind-cluster2
 ```
 
-> All this was taken from Cilium Docs (Great documentation!)
+> All this was taken from Cilium Docs [Great documentation!](https://docs.cilium.io/en/stable/network/clustermesh/clustermesh/)
 
 
 ### Installing an application and making it available from both clusters.
