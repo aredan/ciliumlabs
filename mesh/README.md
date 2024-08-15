@@ -34,8 +34,12 @@ When you're done, use `make clean` to remove the lab.
  In this lab you will be able to get familiar with the Cilium configurations needed to connect multiple Kubernetes clusters together in a Mesh.
 
  > Cilium installation can be made using make or you can do it manually if this is the first time.
- > using make cilium-install-cluster1 and make cilium-install-cluster2
+ > using make 
 
+ ```shell
+ make cilium-install-cluster1
+ make cilium-install-cluster2
+```
 or
 
 ```shell
@@ -100,3 +104,7 @@ cilium connectivity test --context kind-cluster1 --multi-cluster kind-cluster2
 
 ### Installing an application and making it available from both clusters.
 WIP....
+
+
+https://docs.isovalent.com/v1.12/public/jobs-app.yaml
+
