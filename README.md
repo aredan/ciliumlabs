@@ -97,7 +97,7 @@ rm cilium-linux-${CLI_ARCH}.tar.gz{,.sha256sum}
 ```shell
 cilium version --client
 ```
-> Make sure you install cilium-cli v0.15.0 or later.
+> Make sure you install cilium-cli v0.18.6 or later.
 
 
 ### Next steps.

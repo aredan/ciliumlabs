@@ -1,6 +1,6 @@
 ### Lab Cilium Mesh
 
-A lab for Cilium Mesh networking, with this code you will be able to spin-up two cluster connected to two different routers that simulated different networks where you will build a Mesh an from client0 test that everything works (or not?).
+A lab for Cilium Mesh networking, with this code you will be able to spin-up two cluster connected to two different routers that simulate different networks where you will build a Mesh and from client0 test that everything works (or not?).
 
 ### Pre-requisites
 
@@ -44,7 +44,7 @@ or
 
 ```shell
 	kubectl config use-context kind-cluster1
-	cilium install --version=1.16 \
+	cilium install --version=1.18 \
 	  --helm-set cluster.name=cluster1 \
 	  --helm-set cluster.id=1 \
 	  --helm-set ipam.mode=kubernetes \
@@ -64,7 +64,7 @@ kubectl apply -f cluster1-public-pool.yaml
 
 kubectl config use-context kind-cluster2
 kubectl apply -f peering-policy.yaml
-kubectl apply -f cluster1-public-pool.yaml
+kubectl apply -f cluster2-public-pool.yaml
 ```
 
 
