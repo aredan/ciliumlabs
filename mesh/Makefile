@@ -2,7 +2,14 @@ KUBECONFIG := $(HOME)/.kube/config
 
 .PHONY: default ciliumlab cluster1-status cluster2-status cilium-install-cluster1 cilium-install-cluster2 clean
 
-default: ciliumlab cluster1-status cluster2-status
+default: bridges ciliumlab cluster1-status cluster2-status
+
+bridges:
+	$(info Creating bridges for Cilium LAB for Mesh networking....)
+	sudo ip link add br-cluster1 type bridge
+	sudo ip link set br-cluster1 up
+	sudo ip link add br-cluster2 type bridge
+	sudo ip link set br-cluster2 up
 
 ciliumlab:
 	$(info Initializing Cilium LAB for Mesh networking....)
@@ -44,4 +51,8 @@ cilium-install-cluster2:
 	  --helm-set k8s.requireIPv4PodCIDR=true
 
 clean:
+	$(info Cleaning up Cilium LAB for Mesh networking....)
 	sudo -E containerlab destroy -t topo.yaml
+	sudo ip link delete br-cluster1
+	sudo ip link delete br-cluster2
+	

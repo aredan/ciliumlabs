@@ -2,6 +2,12 @@
 
 A lab for Cilium Mesh networking, with this code you will be able to spin-up two cluster connected to two different routers that simulate different networks where you will build a Mesh and from client0 test that everything works (or not?).
 
+### LAB Topology
+> This is the network topology for the lab, the routers are simulating different networks and there is a bridge for each cluster where the worker nodes are connected to.
+
+
+![LAB Topology](../pictures/mesh-topo.png)
+
 ### Pre-requisites
 
 You should have the following tools installed (make sure to also check their pre-requisites):
@@ -18,6 +24,7 @@ sudo tee -a /etc/apt/sources.list.d/netdevops.list
 
 sudo apt update && sudo apt install containerlab
 ```
+> Please run the command 'sudo usermod -aG clab_admins <insert your username here> && newgrp clab_admins' to ensure that you are part of the Container admin group. You can check this by running 'groups'.
 
 For more installation steps on other platforms [containerlab/install](https://containerlab.dev/install/)
 

@@ -4,6 +4,11 @@ topology:
     linux:
       cmd: bash
   nodes:
+    # Shared L2 domains (your host bridges)
+    br-cluster1:
+      kind: bridge         # maps to the host bridge named br-cluster1
+    br-cluster2:
+      kind: bridge         # maps to the host bridge named br-cluster2
     router0:
       kind: linux
       image: frrouting/frr:v8.2.2
@@ -137,6 +142,11 @@ topology:
       exec: 
       - ip addr add 10.0.2.2/24 dev eth1
       - ip route replace default via 10.0.2.1
+    cluster1-worker2:
+      kind: ext-container
+      exec: 
+      - ip addr add 10.0.2.3/24 dev eth1
+      - ip route replace default via 10.0.2.1
 
     cluster2-control-plane:
       kind: ext-container
@@ -148,13 +158,21 @@ topology:
       exec: 
       - ip addr add 10.0.4.2/24 dev eth1
       - ip route replace default via 10.0.4.1
-
+    cluster2-worker2:
+      kind: ext-container
+      exec: 
+      - ip addr add 10.0.4.3/24 dev eth1
+      - ip route replace default via 10.0.4.1
   links:
   - endpoints: ["router0:net0", "tor0:net0"]
   - endpoints: ["router0:net1", "tor1:net0"]
   - endpoints: ["router0:net2", "client0:net0"]
   - endpoints: ["tor0:net1", "cluster1-control-plane:eth1"]
-  - endpoints: ["tor0:net2", "cluster1-worker:eth1"]
+  - endpoints: ["tor0:net2", "br-cluster1:br1p1"]
+  - endpoints: ["cluster1-worker:eth1", "br-cluster1:br1p2"]
+  - endpoints: ["cluster1-worker2:eth1", "br-cluster1:br1p3"]
   - endpoints: ["tor1:net1", "cluster2-control-plane:eth1"]
-  - endpoints: ["tor1:net2", "cluster2-worker:eth1"]
+  - endpoints: ["tor1:net2", "br-cluster2:br2p1"]
+  - endpoints: ["cluster2-worker:eth1", "br-cluster2:br2p2"]
+  - endpoints: ["cluster2-worker2:eth1", "br-cluster2:br2p3"]
 
