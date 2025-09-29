@@ -2,6 +2,8 @@ apiVersion: "cilium.io/v2alpha1"
 kind: CiliumLoadBalancerIPPool
 metadata:
   name: "public-pool"
+  labels:
+    pool: "cluster2"
 spec:
   blocks:
   - cidr: "10.0.20.0/24"

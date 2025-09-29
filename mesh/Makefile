@@ -1,58 +1,135 @@
-KUBECONFIG := $(HOME)/.kube/config
+# Makefile — Cilium Mesh Lab
+# Usage:
+#   make                # shows help
+#   make <target>       # run a task
 
-.PHONY: default ciliumlab cluster1-status cluster2-status cilium-install-cluster1 cilium-install-cluster2 clean
+# ========= Settings (override with: make VAR=value) =========
+KUBECONFIG            ?= $(HOME)/.kube/config
+CLAB_TOPO             ?= topo.yaml
+CTX1                  ?= kind-cluster1
+CTX2                  ?= kind-cluster2
+BR1                   ?= br-cluster1
+BR2                   ?= br-cluster2
 
-default: bridges ciliumlab cluster1-status cluster2-status
+# Cilium install defaults
+CILIUM_VERSION        ?= 1.18
+IPAM_MODE             ?= kubernetes
+TUNNEL                ?= vxlan
+NATIVE_ROUTING_CIDR   ?= 10.0.0.0/8
+BGP_CP                ?= true
+REQUIRE_POD_CIDR      ?= true
 
-bridges:
-	$(info Creating bridges for Cilium LAB for Mesh networking....)
-	sudo ip link add br-cluster1 type bridge
-	sudo ip link set br-cluster1 up
-	sudo ip link add br-cluster2 type bridge
-	sudo ip link set br-cluster2 up
+# Binaries (override if needed)
+KUBECTL ?= kubectl
+CILIUM  ?= cilium
+CLAB    ?= containerlab
+IP      ?= ip
 
-ciliumlab:
-	$(info Initializing Cilium LAB for Mesh networking....)
-	sudo -E containerlab deploy -t topo.yaml
+# Use sudo only if not running as root
+SUDO    := $(if $(filter 0,$(shell id -u)),,sudo)
 
-cluster1-status:
-	$(info Status for Cluster1....)
-	kubectl config use-context kind-cluster1
-	kubectl get nodes -owide
+# Safer shell (fail fast)
+SHELL := bash
+.SHELLFLAGS := -eu -o pipefail -c
 
-cluster2-status:
-	$(info Status for Cluster2....)
-	kubectl config use-context kind-cluster2
-	kubectl get nodes -owide
+# Default target + hygiene
+.DEFAULT_GOAL := help
+.ONESHELL:
+.SILENT:                     # quiet recipes unless they echo/$(info)
+.EXPORT_ALL_VARIABLES:
+.PHONY: help default deps bridges ciliumlab cluster1-status cluster2-status \
+        cilium-install-cluster1 cilium-install-cluster2 clean status all-status \
+        uninstall-cilium-cluster1 uninstall-cilium-cluster2
 
+## Show this help (default).
+help:
+	awk 'BEGIN {FS = ":.*##"; print "Usage: make <target>\nTargets:"} \
+	/^[a-zA-Z0-9_.-]+:.*##/ { printf "  \033[36m%-28s\033[0m %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
-cilium-install-cluster1:
-	$(info Installing Cilium on Cluster1........)
-	kubectl config use-context kind-cluster1
-	cilium install --version=1.18 \
-	  --helm-set cluster.name=cluster1 \
-	  --helm-set cluster.id=1 \
-	  --helm-set ipam.mode=kubernetes \
-	  --helm-set tunnel-protocol=vxlan \
-	  --helm-set ipv4NativeRoutingCIDR="10.0.0.0/8" \
-	  --helm-set bgpControlPlane.enabled=true \
-	  --helm-set k8s.requireIPv4PodCIDR=true
+## Full lab bring-up: deps + bridges + containerlab + both cluster statuses.
+init: deps bridges ciliumlab all-status ## Bring up lab and show statuses.
 
-cilium-install-cluster2:
-	$(info Installing Cilium on Cluster2........)
-	kubectl config use-context kind-cluster2
-	cilium install --version=1.18 \
-	  --helm-set cluster.name=cluster2 \
-	  --helm-set cluster.id=2 \
-	  --helm-set ipam.mode=kubernetes \
-	  --helm-set tunnel-protocol=vxlan \
-	  --helm-set ipv4NativeRoutingCIDR="10.0.0.0/8" \
-	  --helm-set bgpControlPlane.enabled=true \
-	  --helm-set k8s.requireIPv4PodCIDR=true
+## Verify required tools are present.
+deps: ## Check for required tools.
+	@echo "Checking pre-required tools…"
+	command -v $(KUBECTL) >/dev/null || { echo "kubectl not found"; exit 1; }
+	command -v $(CILIUM)  >/dev/null || { echo "cilium CLI not found"; exit 1; }
+	command -v $(CLAB)    >/dev/null || { echo "containerlab not found"; exit 1; }
+	command -v $(IP)      >/dev/null || { echo "iproute2 'ip' not found"; exit 1; }
+	@echo "OK"
 
-clean:
-	$(info Cleaning up Cilium LAB for Mesh networking....)
-	sudo -E containerlab destroy -t topo.yaml
-	sudo ip link delete br-cluster1
-	sudo ip link delete br-cluster2
-	
+## Create/up bridges (idempotent).
+bridges: ## Create Linux bridges for cluster interconnects.
+	@echo "Creating bridges for Cilium LAB for Mesh networking…"
+	($(IP) link show $(BR1) >/dev/null 2>&1) || $(SUDO) $(IP) link add $(BR1) type bridge
+	$(SUDO) $(IP) link set $(BR1) up
+	($(IP) link show $(BR2) >/dev/null 2>&1) || $(SUDO) $(IP) link add $(BR2) type bridge
+	$(SUDO) $(IP) link set $(BR2) up
+	@echo "Bridges ready: $(BR1), $(BR2)"
+
+## Deploy the containerlab topology.
+ciliumlab: ## Deploy containerlab topology.
+	@echo "Initializing Cilium LAB for Mesh networking…"
+	$(SUDO) -E $(CLAB) deploy -t $(CLAB_TOPO)
+
+## Show status for Cluster1 (context + nodes).
+cluster1-status: ## Show node status for Cluster1.
+	@echo "Status for Cluster1…"
+	$(KUBECTL) config use-context $(CTX1)
+	$(KUBECTL) get nodes -o wide
+
+## Show status for Cluster2 (context + nodes).
+cluster2-status: ## Show node status for Cluster2.
+	@echo "Status for Cluster2…"
+	$(KUBECTL) config use-context $(CTX2)
+	$(KUBECTL) get nodes -o wide
+
+## Show status for both clusters.
+all-status: cluster1-status cluster2-status ## Show node status for both clusters.
+
+# ---- Cilium install helpers (DRY) ----
+define INSTALL_CILIUM
+	@echo "Installing Cilium on $(1)…"
+	$(KUBECTL) config use-context $(2)
+	$(CILIUM) install --version=$(CILIUM_VERSION) \
+	  --helm-set cluster.name=$(1) \
+	  --helm-set cluster.id=$(3) \
+	  --helm-set ipam.mode=$(IPAM_MODE) \
+	  --helm-set tunnel-protocol=$(TUNNEL) \
+	  --helm-set ipv4NativeRoutingCIDR="$(NATIVE_ROUTING_CIDR)" \
+	  --helm-set bgpControlPlane.enabled=$(BGP_CP) \
+	  --helm-set k8s.requireIPv4PodCIDR=$(REQUIRE_POD_CIDR) \
+	  --helm-set kubeProxyReplacement=true \
+      --helm-set bpf.masquerade=true 
+	$(CILIUM) status --wait || true
+endef
+
+define UNINSTALL_CILIUM
+	@echo "Uninstalling Cilium on $(1)…"
+	$(KUBECTL) config use-context $(2)
+	$(CILIUM) uninstall --wait || true
+endef
+
+## Install Cilium (cluster1).
+cilium-install-cluster1: ## Install Cilium v$(CILIUM_VERSION) on Cluster1.
+	$(call INSTALL_CILIUM,cluster1,$(CTX1),1)
+
+## Install Cilium (cluster2).
+cilium-install-cluster2: ## Install Cilium v$(CILIUM_VERSION) on Cluster2.
+	$(call INSTALL_CILIUM,cluster2,$(CTX2),2)
+
+## Uninstall Cilium (cluster1).
+uninstall-cilium-cluster1: ## Uninstall Cilium from Cluster1.
+	$(call UNINSTALL_CILIUM,cluster1,$(CTX1))
+
+## Uninstall Cilium (cluster2).
+uninstall-cilium-cluster2: ## Uninstall Cilium from Cluster2.
+	$(call UNINSTALL_CILIUM,cluster2,$(CTX2))
+
+## Destroy lab & bridges (idempotent).
+clean: ## Destroy containerlab topology and bridges.
+	@echo "Cleaning up Cilium LAB for Mesh networking…"
+	$(SUDO) -E $(CLAB) destroy -t $(CLAB_TOPO) || true
+	($(IP) link show $(BR1) >/dev/null 2>&1) && $(SUDO) $(IP) link delete $(BR1) || true
+	($(IP) link show $(BR2) >/dev/null 2>&1) && $(SUDO) $(IP) link delete $(BR2) || true
+	@echo "Cleanup complete"
