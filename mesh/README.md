@@ -103,12 +103,12 @@ After applying the BGP configuration, you can check for the status of the BGP in
 
 ```shell
 kubectl config use-context kind-cluster1
-cilium bgp status
+cilium bgp peers
 ```
 
 ```shell
 kubectl config use-context kind-cluster2
-cilium bgp status
+cilium bgp peers
 ```
 
 Take a look at the FRR BGP sessions.
