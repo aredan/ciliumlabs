@@ -35,7 +35,7 @@ All the steps are described in the `Makefile`, just type `make` to get the list 
 
 Just run `make init` to start the lab.
 
-![make menu](../pictures/make-menu.png)
+![make menu](../pictures/make-menu.jpg)
 
 > This lab can be run separate from the other labs, if your machine have the resources, the labs can be running at the same time.
 
