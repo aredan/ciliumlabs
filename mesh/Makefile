@@ -3,6 +3,10 @@
 #   make                # shows help
 #   make <target>       # run a task
 
+# Cilium version
+# always latest!
+CILIUM_VERSION ?= $(shell curl -s https://raw.githubusercontent.com/cilium/cilium/main/stable.txt)
+
 # ========= Settings (override with: make VAR=value) =========
 KUBECONFIG            ?= $(HOME)/.kube/config
 CLAB_TOPO             ?= topo.yaml
@@ -12,7 +16,6 @@ BR1                   ?= br-cluster1
 BR2                   ?= br-cluster2
 
 # Cilium install defaults
-CILIUM_VERSION        ?= 1.18
 IPAM_MODE             ?= kubernetes
 TUNNEL                ?= vxlan
 NATIVE_ROUTING_CIDR   ?= 10.0.0.0/8
@@ -84,6 +87,8 @@ cluster2-status: ## Show node status for Cluster2.
 	$(KUBECTL) config use-context $(CTX2)
 	$(KUBECTL) get nodes -o wide
 
+rebuild: clean init ## Rebuild the lab.
+
 ## Show status for both clusters.
 all-status: cluster1-status cluster2-status ## Show node status for both clusters.
 
@@ -130,6 +135,7 @@ uninstall-cilium-cluster2: ## Uninstall Cilium from Cluster2.
 clean: ## Destroy containerlab topology and bridges.
 	@echo "Cleaning up Cilium LAB for Mesh networking…"
 	$(SUDO) -E $(CLAB) destroy -t $(CLAB_TOPO) || true
+	$(SUDO) rm -f .topo.yaml.bak || true
 	($(IP) link show $(BR1) >/dev/null 2>&1) && $(SUDO) $(IP) link delete $(BR1) || true
 	($(IP) link show $(BR2) >/dev/null 2>&1) && $(SUDO) $(IP) link delete $(BR2) || true
 	@echo "Cleanup complete"

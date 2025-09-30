@@ -11,7 +11,7 @@ topology:
       kind: bridge         # maps to the host bridge named br-cluster2
     router0:
       kind: linux
-      image: frrouting/frr:v8.2.2
+      image: frrouting/frr:v8.4.0
       labels:
         app: frr
       exec:
@@ -43,7 +43,7 @@ topology:
         -c '!'
     tor0:
       kind: linux
-      image: frrouting/frr:v8.2.2
+      image: frrouting/frr:v8.4.0
       labels:
         app: frr
       exec:
@@ -74,7 +74,7 @@ topology:
         -c '!'
     tor1:
       kind: linux
-      image: frrouting/frr:v8.2.2
+      image: frrouting/frr:v8.4.0
       labels:
         app: frr
       exec:

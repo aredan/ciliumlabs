@@ -91,6 +91,20 @@ Check for Mesh status in Cilium
 cilium clustermesh status --context kind-cluster1 --wait 
 cilium clustermesh status --context kind-cluster2 --wait 
 ```
+
+The response should be something like:
+
+```shell
+debian@kind:~/ciliumlabs/mesh$ cilium clustermesh status
+✅ Service "clustermesh-apiserver" of type "LoadBalancer" found
+✅ Cluster access information is available:
+  - 10.0.20.0:2379
+✅ Deployment clustermesh-apiserver is ready
+🔌 No cluster connected
+🔀 Global services: [ min:0 / avg:0.0 / max:0 ]
+debian@kind:~/ciliumlabs/mesh$
+```
+
 > In some cases, the service type cannot be automatically detected and you need to specify it manually. This can be done with the option --service-type
 > LoadBalancer:
 > A Kubernetes service of type LoadBalancer is used to expose the control plane. This uses a stable LoadBalancer IP and is typically the best option.
@@ -126,16 +140,37 @@ debian@kind:~/ciliumlabs/mesh$ docker exec -it clab-ciliumlab-router0 vtysh -c '
 
 IPv4 Unicast Summary (VRF default):
 BGP router identifier 10.0.0.0, local AS number 65000 vrf-id 0
-BGP table version 8
-RIB entries 15, using 2760 bytes of memory
+BGP table version 13
+RIB entries 25, using 4600 bytes of memory
 Peers 2, using 1433 KiB of memory
 Peer groups 1, using 64 bytes of memory
 
 Neighbor        V         AS   MsgRcvd   MsgSent   TblVer  InQ OutQ  Up/Down State/PfxRcd   PfxSnt Desc
-tor0(net0)      4      65010      1689      1690        0    0    0 01:23:59            3        9 N/A
-tor1(net1)      4      65011      1690      1691        0    0    0 01:23:59            3        9 N/A
+tor0(net0)      4      65010     31543     31544        0    0    0 1d02h16m            8       14 N/A
+tor1(net1)      4      65011     31544     31545        0    0    0 1d02h16m            3       14 N/A
 
 Total number of neighbors 2
+```
+From Cilium point of view, you will see something similar (depends if LoadBalancer and others IP services are being announced)
+
+```shell
+debian@kind:~/ciliumlabs/mesh$ cilium bgp routes advertised ipv4 unicast
+Node                     VRouter   Peer       Prefix            NextHop    Age     Attrs
+cluster1-control-plane   65010     10.0.0.1   10.0.10.0/32      10.0.1.2   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.1.2} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.0.1/32       10.0.1.2   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.1.2} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.0.10/32      10.0.1.2   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.1.2} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.132.145/32   10.0.1.2   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.1.2} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.233.238/32   10.0.1.2   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.1.2} {LocalPref: 100}]
+cluster1-worker          65010     10.0.0.1   10.0.10.0/32      10.0.2.2   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.2.2} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.0.1/32       10.0.2.2   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.2.2} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.0.10/32      10.0.2.2   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.2.2} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.132.145/32   10.0.2.2   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.2.2} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.233.238/32   10.0.2.2   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.2.2} {LocalPref: 100}]
+cluster1-worker2         65010     10.0.0.1   10.0.10.0/32      10.0.2.3   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.2.3} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.0.1/32       10.0.2.3   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.2.3} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.0.10/32      10.0.2.3   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.2.3} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.132.145/32   10.0.2.3   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.2.3} {LocalPref: 100}]
+                         65010     10.0.0.1   10.2.233.238/32   10.0.2.3   9m50s   [{Origin: i} {AsPath: } {Nexthop: 10.0.2.3} {LocalPref: 100}]
 debian@kind:~/ciliumlabs/mesh$
 ```
 

@@ -41,28 +41,17 @@ spec:
 apiVersion: cilium.io/v2
 kind: CiliumBGPAdvertisement
 metadata:
-  name: pod-ip-pool-advert
+  name: bgp-advertisement
   labels:
-    advertise: pod-ip-pool
+    advertise: bgp
 spec:
   advertisements:
     - advertisementType: "Service"
       service:
         addresses:
-          - LoadBalancerIP 
-      selector:
-        matchLabels:
-          pool: "cluster1"
-      attributes:
-        communities:
-          standard: [ "65010:100" ]
-    - advertisementType: "Service"
-      service:
-        addresses:
-          - LoadBalancerIP 
-      selector:
-        matchLabels:
-          pool: "cluster2"
-      attributes:
-        communities:
-          standard: [ "65011:100" ]
+          - LoadBalancerIP
+          - ExternalIP
+          - ClusterIP
+      selector:             # <-- select all services
+        matchExpressions:
+         - {key: somekey, operator: NotIn, values: ['never-used-value']}
