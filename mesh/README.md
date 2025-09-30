@@ -35,7 +35,25 @@ All the steps are described in the `Makefile`, just type `make` to get the list 
 
 Just run `make init` to start the lab.
 
-![make menu](../pictures/make-menu.jpg)
+```shell
+debian@kind:~/ciliumlabs/mesh$ make
+Usage: make <target>
+Targets:
+  init                          Bring up lab and show statuses.
+  deps                          Check for required tools.
+  bridges                       Create Linux bridges for cluster interconnects.
+  ciliumlab                     Deploy containerlab topology.
+  cluster1-status               Show node status for Cluster1.
+  cluster2-status               Show node status for Cluster2.
+  rebuild                       Rebuild the lab.
+  all-status                    Show node status for both clusters.
+  cilium-install-cluster1       Install Cilium v$(CILIUM_VERSION) on Cluster1.
+  cilium-install-cluster2       Install Cilium v$(CILIUM_VERSION) on Cluster2.
+  uninstall-cilium-cluster1     Uninstall Cilium from Cluster1.
+  uninstall-cilium-cluster2     Uninstall Cilium from Cluster2.
+  clean                         Destroy containerlab topology and bridges.
+debian@kind:~/ciliumlabs/mesh$
+```
 
 > This lab can be run separate from the other labs, if your machine have the resources, the labs can be running at the same time.
 
