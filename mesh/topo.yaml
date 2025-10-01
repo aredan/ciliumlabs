@@ -15,12 +15,16 @@ topology:
       labels:
         app: frr
       exec:
+      - ip addr add 10.90.0.1/24 dev net0
+      - ip addr add 10.90.1.1/24 dev net1
+      - ip addr add 10.0.0.1/24 dev net2
       # NAT everything in here to go outside of the lab
       - iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
       # Loopback IP (IP address of the router itself)
       - ip addr add 10.0.0.0/32 dev lo
       # Terminate rest of the 10.0.0.0/8 in here
-      - ip route add blackhole 10.0.0.0/8
+      - sysctl net.ipv6.conf.all.forwarding=1
+      - sysctl net.ipv4.conf.all.forwarding=1
       # Boiler plate to make FRR work
       - touch /etc/frr/vtysh.conf
       - sed -i -e 's/bgpd=no/bgpd=yes/g' /etc/frr/daemons
@@ -35,8 +39,8 @@ topology:
         -c '  neighbor ROUTERS peer-group'
         -c '  neighbor ROUTERS remote-as external'
         -c '  neighbor ROUTERS default-originate'
-        -c '  neighbor net0 interface peer-group ROUTERS'
-        -c '  neighbor net1 interface peer-group ROUTERS'
+        -c '  neighbor 10.90.0.2 peer-group ROUTERS'
+        -c '  neighbor 10.90.1.2 peer-group ROUTERS'
         -c '  address-family ipv4 unicast'
         -c '    redistribute connected'
         -c '  exit-address-family'
@@ -49,8 +53,11 @@ topology:
       exec:
       - ip link del eth0
       - ip addr add 10.0.0.1/32 dev lo
+      - ip addr add 10.90.0.2/24 dev net0
       - ip addr add 10.0.1.1/24 dev net1
       - ip addr add 10.0.2.1/24 dev net2
+      - sysctl net.ipv6.conf.all.forwarding=1
+      - sysctl net.ipv4.conf.all.forwarding=1
       - touch /etc/frr/vtysh.conf
       - sed -i -e 's/bgpd=no/bgpd=yes/g' /etc/frr/daemons
       - /usr/lib/frr/frrinit.sh start
@@ -64,7 +71,7 @@ topology:
         -c '  neighbor ROUTERS remote-as external'
         -c '  neighbor SERVERS peer-group'
         -c '  neighbor SERVERS remote-as internal'
-        -c '  neighbor net0 interface peer-group ROUTERS'
+        -c '  neighbor 10.90.0.1 peer-group ROUTERS'
         -c '  neighbor 10.0.1.2 peer-group SERVERS'
         -c '  neighbor 10.0.2.2 peer-group SERVERS'
         -c '  neighbor 10.0.2.3 peer-group SERVERS'
@@ -80,8 +87,11 @@ topology:
       exec:
       - ip link del eth0
       - ip addr add 10.0.0.2/32 dev lo
+      - ip addr add 10.90.1.2/24 dev net0
       - ip addr add 10.0.3.1/24 dev net1
       - ip addr add 10.0.4.1/24 dev net2
+      - sysctl net.ipv6.conf.all.forwarding=1
+      - sysctl net.ipv4.conf.all.forwarding=1
       - touch /etc/frr/vtysh.conf
       - sed -i -e 's/bgpd=no/bgpd=yes/g' /etc/frr/daemons
       - /usr/lib/frr/frrinit.sh start
@@ -96,7 +106,7 @@ topology:
         -c '  neighbor ROUTERS remote-as external'
         -c '  neighbor SERVERS peer-group'
         -c '  neighbor SERVERS remote-as internal'
-        -c '  neighbor net0 interface peer-group ROUTERS'
+        -c '  neighbor 10.90.1.1 peer-group ROUTERS'
         -c '  neighbor 10.0.3.2 peer-group SERVERS'
         -c '  neighbor 10.0.4.2 peer-group SERVERS'
         -c '  neighbor 10.0.4.3 peer-group SERVERS'
@@ -106,16 +116,11 @@ topology:
         -c '!'
     client0:
       kind: linux
-      image: alpine:latest
-      labels:
-        app: client
-      cmd: ash
+      image: nicolaka/netshoot:v0.11
       exec:
       - ip link del eth0
-      - ip add add 10.0.0.10/24 dev net0
-      - ip route replace default via 10.0.0.1
-      - apk update
-      - apk add curl tcpdump
+      - ip addr add 10.0.0.10/24 dev net0
+      - ip route add 0.0.0.0/0 via 10.0.0.1 dev net0
     cluster1:
       kind: k8s-kind
       startup-config: cluster1.yaml

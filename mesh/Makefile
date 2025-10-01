@@ -51,6 +51,8 @@ help:
 
 ## Full lab bring-up: deps + bridges + containerlab + both cluster statuses.
 init: deps bridges ciliumlab all-status ## Bring up lab and show statuses.
+## Full lab bring-up: deps + bridges + containerlab + apply bgp + enable mesh.
+build-all: deps bridges ciliumlab cilium-install-cluster1 cilium-install-cluster2 apply-bgp enable-mesh all-status ## Build the lab completely.
 
 ## Verify required tools are present.
 deps: ## Check for required tools.
@@ -87,6 +89,24 @@ cluster2-status: ## Show node status for Cluster2.
 	$(KUBECTL) config use-context $(CTX2)
 	$(KUBECTL) get nodes -o wide
 
+## at one point we are not going to do this manually
+apply-bgp: ## Apply BGP configuration to all clusters.
+	@echo "Applying BGP configuration…"
+	$(KUBECTL) config use-context kind-cluster1
+	$(KUBECTL) apply -f cluster1-bgp-config.yaml
+	$(KUBECTL) apply -f cluster1-public-pool.yaml
+	$(KUBECTL) config use-context kind-cluster2
+	$(KUBECTL) apply -f cluster2-bgp-config.yaml
+	$(KUBECTL) apply -f cluster2-public-pool.yaml
+
+## at one point we are not going to do this manually
+enable-mesh: ## Enable Mesh on all clusters.
+	@echo "Enabling Mesh on all clusters…"
+	$(KUBECTL) config use-context kind-cluster1
+	$(CILIUM) clustermesh enable --context kind-cluster1 --enable-kvstoremesh=false --service-type LoadBalancer
+	$(KUBECTL) config use-context kind-cluster2
+	$(CILIUM) clustermesh enable --context kind-cluster2 --enable-kvstoremesh=false --service-type LoadBalancer
+
 rebuild: clean init ## Rebuild the lab.
 
 ## Show status for both clusters.
@@ -100,12 +120,13 @@ define INSTALL_CILIUM
 	  --helm-set cluster.name=$(1) \
 	  --helm-set cluster.id=$(3) \
 	  --helm-set ipam.mode=$(IPAM_MODE) \
+	  --helm-set routing-mode=native \
 	  --helm-set tunnel-protocol=$(TUNNEL) \
 	  --helm-set ipv4NativeRoutingCIDR="$(NATIVE_ROUTING_CIDR)" \
 	  --helm-set bgpControlPlane.enabled=$(BGP_CP) \
 	  --helm-set k8s.requireIPv4PodCIDR=$(REQUIRE_POD_CIDR) \
-	  --helm-set kubeProxyReplacement=true \
-      --helm-set bpf.masquerade=true 
+	  --helm-set kubeProxyReplacement=true 
+
 	$(CILIUM) status --wait || true
 endef
 
@@ -136,6 +157,7 @@ clean: ## Destroy containerlab topology and bridges.
 	@echo "Cleaning up Cilium LAB for Mesh networking…"
 	$(SUDO) -E $(CLAB) destroy -t $(CLAB_TOPO) || true
 	$(SUDO) rm -f .topo.yaml.bak || true
+	$(SUDO) rm -rf clab-ciliumlab || true
 	($(IP) link show $(BR1) >/dev/null 2>&1) && $(SUDO) $(IP) link delete $(BR1) || true
 	($(IP) link show $(BR2) >/dev/null 2>&1) && $(SUDO) $(IP) link delete $(BR2) || true
 	@echo "Cleanup complete"

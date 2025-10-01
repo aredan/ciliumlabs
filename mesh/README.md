@@ -77,7 +77,7 @@ or
 	cilium install --version=1.18 \
 	  --helm-set cluster.name=cluster1 \
 	  --helm-set cluster.id=1 \
-	  --helm-set ipam.mode=multi-pool \
+	  --helm-set ipam.mode=kubernetes \
 	  --helm-set tunnel-protocol=vxlan \
 	  --helm-set ipv4NativeRoutingCIDR="10.0.0.0/8" \
 	  --helm-set bgpControlPlane.enabled=true \
